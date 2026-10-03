@@ -1,0 +1,283 @@
+---
+title: "LeafLET'S TAKE A ROADTRIP!"
+author: "Jordan Christian"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmdformats::readthedown
+self_contained: true # fun theme :)
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include-image, echo=FALSE, fig.cap="[Yellowstone National Park](https://stock.adobe.com/images/the-grand-prismatic-spring-yellowstone-national-park-the-largest-hot-spring-in-the-united-states-and-the-third-largest-in-the-world/582764011?prev_url=detail)", out.width="50%"}
+knitr::include_graphics("AdobeStock_582764011.jpeg")  # image of Yellowstone
+```
+
+## Introduction to Leaflet
+
+This code through explores the package Leaflet. This package provides an array of valuable tools to create interactive maps which can be used as vivid, spatial representations of data across multiple disciplines.
+
+###### A few examples of relevant disciplines: 
+   - Public Policy
+   - Epidemiology  
+   - Meteorology   
+
+These maps can be paired with other GIS platforms like [OpenStreetMap](https://www.openstreetmap.org/), [Mapbox](https://www.mapbox.com/), and [CartoDB](https://carto.com/). The latter two build upon OpenStreetMap to add geocoding, navigation, and other more advanced techniques.
+<br>
+
+For this tutorial we will use its default, OpenStreetMap, an opensource mapping platform akin to Google Maps.
+
+## What to expect?
+
+The amount of visual customization in this package is extensive. This will be a basic tutorial to highlight the fundamental building blocks of Leaflet that you can then further customize and build upon. To make it fun, this tutorial will meet at the intersection of coding and road trip planning.
+
+## Learning Objectives
+
+  - Understand the components of Leaflet function
+  - Familiarize yourself with the basic customizable features of each component   
+  - Learn something cool!
+  
+**Note:** Leaflet makes data readability incredibly easy. A 2 column table of latitudes and longitudes can be used to create "stops" along the path built in either Base R or from a CSV file. Other forms of spatial data, such as special features (sf) and spatial data (sp), are accepted as well. More information can be found in the reference section.
+
+##### The building blocks:
+
+  - Map tiles 
+  - Markers  
+  - Lines
+  - Popups
+  - Polygons, Circles, & Rectangles:   
+<br>
+These are used to display geographic regions. (i.e. highlighting states or countries, widespread areas vs. specific locations) They are frequently used with spatial data which this tutorial will not cover. More info can be found [here.](https://rstudio.github.io/leaflet/articles/shapes.html#polygons-and-polylines)
+
+To find latitudes and longitudes, you can use [Google Maps](https://www.google.com/maps). Coordinates can be found by
+by searching an address and then right clicking on the marker above the location. However, these will be provided in the tutorial.
+<br>
+
+#### We're going to Yellowstone National Park!
+
+...but we want to take our time and visit some cool places. This tutorial is going to teach you how to create a guide for you to follow those places along a map during your trip!
+
+####### Let's begin!
+```{r}
+
+library("leaflet") # Load libraries
+
+```
+
+## **Create a base map**
+
+```{r}
+
+
+myMap <- leaflet() %>% 
+  
+  addTiles() %>%    # Tiles provide the map's base layer or visual context
+  
+  addMarkers(lat = 33.42183,    # Places a marker at specified coordinates on the map
+             lng = -111.9345,
+             label = "Arizona State University",          # Label info
+             labelOptions = labelOptions(noHide = FALSE)) # Label appears above the marker when
+                                                                     # the mouse hovers over it
+myMap # print map
+
+```
+<br>
+We can see that this produces a map with zoom in/zoom out functions, a marker on the location
+of coordinates entered, and a label when you hover over that marker.
+
+Throughout this tutorial you  will see that all of these (plus more!) can be customized and changed to make it a unique, individualized
+experience for the user.
+<br>
+<br>
+**Here's the same thing as above, but with all of the trip's markers and location labels:**
+<br>
+```{r}
+
+# Data frame for convenience - with markers & labels defined
+
+road.trip <- data.frame(
+  lat = c(33.42183, 36.89006, 36.86255, 37.29577, 37.58964, 43.80460, 44.42847),
+  lng = c(-112.07, -111.51094, -111.36666, -113.14498, -112.10093, -110.65173, -110.58768),
+  labelInfo = c( "Arizona State University", "Horseshoe Bend", "Antelope Canyon", 
+                 "Zion National Park", "Bryce Canyon National Park", 
+                 "Grand Teton National Park", "Yellowstone National Park"))
+  
+# Plug it into the base map template (much more cleaned up now!) ->
+
+myMap <- leaflet() %>% 
+  addTiles() %>% 
+  addMarkers( 
+    data = road.trip,                  # Insert data frame here
+    lng = ~lng,
+    lat = ~lat,           
+    label = ~labelInfo,                              
+    labelOptions = labelOptions(noHide = FALSE))
+
+myMap
+
+```
+# Markers 
+
+There are many types of markers: circle markers that can be radius defined, "awesome markers" that have unique icons, and you can even add a png file. The blue location markers are the default choice.   
+<br>
+A list of icons that can be used with the awesome markers function can be found in the Font Awesome [library](https://fontawesome.com/v4/icons/).
+
+```{r}
+
+# Let's try circle markers
+
+myMap <- leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(            # Change marker type to circle
+    data = road.trip,     
+    lng = ~lng,
+    lat = ~lat,
+    label = ~labelInfo,
+    labelOptions = labelOptions(noHide = FALSE))
+
+myMap
+
+
+# How about awesome markers?
+
+myMap <- leaflet() %>% 
+  addTiles() %>% 
+  addAwesomeMarkers(      # Change marker type to awesome
+    data = road.trip,     
+    lng = ~lng,
+    lat = ~lat,
+    label = ~labelInfo,
+    labelOptions = labelOptions(noHide = FALSE),
+    icon = awesomeIcons("car", library = "fa"))     # Change icon
+
+myMap
+
+
+```
+# Lines
+
+Okay cool! Now we can see a map with all of the markers and the names of stops. Now lets connect the dots!
+```{r}
+
+myMap <- leaflet() %>% 
+  addTiles() %>% 
+  addMarkers( 
+    data = road.trip,     
+    lng = ~lng,
+    lat = ~lat,
+    label = ~labelInfo,
+    labelOptions = labelOptions(noHide = FALSE)) %>% 
+  
+  addPolylines(      # Add line
+    data = road.trip,
+    lng = ~lng,
+    lat = ~lat,
+    color = "red",   # Line color
+    weight = 3,      # Line thickness
+    opacity = .7     # Line transparency
+  )
+
+myMap
+
+```
+# Popups
+
+The last step to really give the map a level up is going to be the addition of popups. You can add a variety of information to popups including:
+<br>
+
+* Text   
+* Tables   
+* Plots  
+* Images
+* Hyperlinks  
+
+This tutorial will cover the first 2: text and hyperlinks.
+
+```{r}
+
+# Popup information 
+
+asu <- paste(sep = "<br/>",
+             "<b>City:</b> Tempe, AZ",    # Add text
+             "<b>Fee:</b> None",
+             "<b><a href='https://www.asu.edu/'>Website</a></b>")    # Add hyperlink
+
+h.bend <- paste(sep = "<br/",
+                "<b>City:</b> Page, AZ",
+                "<b>Fee:</b> $10",
+                "<b><a href='https://horseshoebend.co/'>Website</a></b>")
+
+a.can <- paste(sep = "<br/>",
+               "<b>City:</b> Page, AZ",
+               "<b>Fee:</b> $15 per day + Tour Guide <b>*additional cost*</b>",
+               "<b><a href='https://navajonationparks.org/guided-tour-operators/
+               antelope-canyon-tour-operators/'>Website</a></b>")
+
+z.park <- paste(sep = "<br/>",
+                "<b>City:</b> Springdale, UT",
+                "<b>Fee:</b> $35",
+                "<b><a href= 'https://www.nps.gov/zion/index.htm'>Website</a></b>")
+
+b.park <- paste(sep = "<br/>",
+                "<b>City:</b> Bryce, UT ",
+                "<b>Fee:</b> $35",
+                "<b><a href= 'https://www.nps.gov/brca/index.htm'>Website</a></b>")
+teton.p <- paste(sep = "<br/>",
+               "<b>City:</b> Teton County, Wyoming",
+               "<b>Fee:</b> $35",
+               "<b><a href= 'https://www.nps.gov/grte/index.htm'>Website</a></b>")
+
+yel.p <- paste(sep = "<br/>",
+                     "<b>City:</b> N/A, Wyoming",
+                     "<b>Fee:</b> $35",
+                     "<b><a href= 'https://www.nps.gov/yell/index.htm'>Website</a></b>")
+
+# Clean it up
+
+myPopups <- c(asu, h.bend, a.can, z.park, b.park, teton.p, yel.p)
+
+myMap <- leaflet() %>% 
+  addTiles() %>% 
+  
+  addMarkers( 
+    data = road.trip,     
+    lng = ~lng,
+    lat = ~lat,
+    label = ~labelInfo,
+    labelOptions = labelOptions(noHide = FALSE),
+    popup = ~myPopups) %>%    # Add popups
+  
+  addPolylines(
+    data = road.trip,
+    lng = ~lng,
+    lat = ~lat,
+    color = "red",   
+    weight = 3,      
+    opacity = .7)
+
+myMap
+
+```
+<br>
+There you have it! A customized road trip map from ASU to Yellowstone using the Leaflet package. I hope you enjoyed reading this tutorial. I had a lot of fun making it!  
+
+# Further Resources
+Learn more about Leaflet with the following:
+
+* [Leaflet](https://rstudio.github.io/leaflet/articles/leaflet.html)
+
+* [CRAN Package {leaflet}](https://cran.r-project.org/web/packages/leaflet/refman/leaflet.html#leaflet-package)
+<br>
+
+# Works Cited
+
+This code through references and cites the following sources:
+
+* Edzer Pebesma (2018). Source I. [Simple Features for R](https://r-spatial.github.io/sf/index.html)
+
+* Edzer Pebesma, Roger S. Bivand (2005). Source II. [Classes and Methods for Spatial Data:
+the sp Package](https://cran.r-project.org/web/packages/sp/vignettes/intro_sp.pdf)
+
+<br>
+<br>
